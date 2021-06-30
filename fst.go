@@ -95,6 +95,38 @@ func (f *FST) get(input []byte, prealloc fstState) (uint64, bool, error) {
 	return 0, false, nil
 }
 
+// FindBlockOffset like lucene inverted index, fst should support find index block offset in file of disk
+// first value returned is offset, second value returned is suffix of input
+func (f *FST) FindBlockOffset(input []byte) (uint64, []byte, bool, error) {
+	var total uint64
+	curr := f.decoder.getRoot()
+	state, err := f.decoder.stateAt(curr, nil)
+	if err != nil {
+		return 0, nil, false, err
+	}
+	for i, c := range input {
+		_, curr, output := state.TransitionFor(c)
+		if curr == noneAddr {
+			return 0, nil, false, nil
+		}
+
+		state, err = f.decoder.stateAt(curr, state)
+		if err != nil {
+			return 0, nil, false, err
+		}
+
+		total += output
+
+		if state.Final() {
+			total += state.FinalOutput()
+			suffix := input[i+1:]
+			return total, suffix, true, nil
+		}
+	}
+
+	return 0, nil, false, nil
+}
+
 // Version returns the encoding version used by this FST instance.
 func (f *FST) Version() int {
 	return f.ver

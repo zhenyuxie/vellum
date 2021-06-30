@@ -79,7 +79,16 @@ func Example() {
 		fmt.Println(val)
 	}
 
+	val, suffix, exists, err := fst.FindBlockOffset([]byte("catdog"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	if exists {
+		fmt.Println(val, string(suffix))
+	}
+
 	// Output: 1
 	// 2
 	// 3
+	// 1 dog
 }
